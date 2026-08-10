@@ -34,9 +34,10 @@ import json
 import os
 import sys
 from collections import Counter
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 import requests
 
@@ -343,9 +344,11 @@ def render_markdown(requests_: Sequence[Request], metrics: dict[str, Any]) -> st
     lines = [
         "# Devin remediation effectiveness report",
         "",
-        f"Window: `{metrics['window_start'] or 'n/a'}` .. "
-        f"`{metrics['window_end'] or 'n/a'}` "
-        f"({metrics['requests']} authorization decisions)",
+        (
+            f"Window: `{metrics['window_start'] or 'n/a'}` .. "
+            f"`{metrics['window_end'] or 'n/a'}` "
+            f"({metrics['requests']} authorization decisions)"
+        ),
         "",
         "## Access control",
         "",
@@ -375,8 +378,10 @@ def render_markdown(requests_: Sequence[Request], metrics: dict[str, Any]) -> st
         f"| Pull requests merged | {metrics['pull_requests_merged']} |",
         f"| Pull-request yield | {_percent(metrics['pull_request_yield'])} |",
         f"| Merge rate | {_percent(metrics['merge_rate'])} |",
-        f"| Mean observed session duration | "
-        f"{_duration(metrics['mean_session_seconds'])} |",
+        (
+            f"| Mean observed session duration | "
+            f"{_duration(metrics['mean_session_seconds'])} |"
+        ),
         "",
         "## Requests",
         "",
@@ -392,8 +397,10 @@ def render_markdown(requests_: Sequence[Request], metrics: dict[str, Any]) -> st
         )
     lines += [
         "",
-        "Generated from the append-only audit ledger; every row is traceable to "
-        "an Actions run and the actor who authorized it.",
+        (
+            "Generated from the append-only audit ledger; every row is traceable "
+            "to an Actions run and the actor who authorized it."
+        ),
         "",
     ]
     return "\n".join(lines)

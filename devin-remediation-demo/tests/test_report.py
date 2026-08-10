@@ -25,7 +25,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-import report  # noqa: E402
+import report
 
 DENIED = {
     "timestamp": "2026-08-07T19:49:08+00:00",
@@ -86,8 +86,7 @@ def write_ledger(tmp_path: Path, records: list[dict[str, Any]]) -> str:
     tmp_path.mkdir(parents=True, exist_ok=True)
     path = tmp_path / "remediation-audit.jsonl"
     with open(path, "w", encoding="utf-8") as handle:
-        for record in records:
-            handle.write(json.dumps(record) + "\n")
+        handle.writelines(json.dumps(record) + "\n" for record in records)
         handle.write("not json\n")  # a truncated line must not break the report
     return str(path)
 
