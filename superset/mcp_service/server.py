@@ -197,16 +197,13 @@ def configure_logging(debug: bool = False) -> None:
             "sqlalchemy.pool",
             "sqlalchemy.dialects",
         ]:
-            sqlalchemy_logger = logging.getLogger(logger_name)
+            logger = logging.getLogger(logger_name)
             # Only set level if it's still at default (WARNING for SQLAlchemy)
-            if (
-                sqlalchemy_logger.level == logging.WARNING
-                or sqlalchemy_logger.level == logging.NOTSET
-            ):
-                sqlalchemy_logger.setLevel(logging.INFO)
+            if logger.level == logging.WARNING or logger.level == logging.NOTSET:
+                logger.setLevel(logging.INFO)
 
         # Use logging instead of print to avoid stdout contamination
-        logger.info("🔍 SQL Debug logging enabled")
+        logging.info("🔍 SQL Debug logging enabled")
 
     # FastMCP's server.py logs ValidationError/ToolError at ERROR via
     # logger.exception() before our middleware sees it. These are user errors
@@ -244,7 +241,7 @@ def create_event_store(config: dict[str, Any] | None = None) -> Any | None:
         config = MCP_STORE_CONFIG
 
     if not config.get("CACHE_REDIS_URL"):
-        logger.info("EventStore: Using in-memory storage (single-pod mode)")
+        logging.info("EventStore: Using in-memory storage (single-pod mode)")
         return None
 
     try:
@@ -257,7 +254,7 @@ def create_event_store(config: dict[str, Any] | None = None) -> Any | None:
         # Create wrapped Redis store with prefix for key namespacing
         redis_store = _create_redis_store(config, prefix=prefix, wrap=True)
         if redis_store is None:
-            logger.warning("Failed to create Redis store, falling back to in-memory")
+            logging.warning("Failed to create Redis store, falling back to in-memory")
             return None
 
         # Create EventStore with Redis backend
@@ -267,18 +264,18 @@ def create_event_store(config: dict[str, Any] | None = None) -> Any | None:
             ttl=config.get("event_store_ttl", 3600),
         )
 
-        logger.info("EventStore: Using Redis storage (multi-pod mode)")
+        logging.info("EventStore: Using Redis storage (multi-pod mode)")
         return event_store
 
     except ImportError as e:
-        logger.error(
+        logging.error(
             "Failed to import EventStore dependencies: %s. "
             "Ensure fastmcp package is installed.",
             e,
         )
         return None
     except Exception as e:
-        logger.error("Failed to create Redis EventStore: %s", e)
+        logging.error("Failed to create Redis EventStore: %s", e)
         return None
 
 
@@ -965,7 +962,7 @@ def run_server(
 
     if use_factory_config:
         # Use factory configuration for customization
-        logger.info("Creating MCP app from factory configuration...")
+        logging.info("Creating MCP app from factory configuration...")
         factory_config = get_mcp_factory_config()
         mcp_instance = create_mcp_app(**factory_config)
         # Capture the actual auth object so the hello page reflects real auth state
@@ -978,7 +975,7 @@ def run_server(
             _apply_tool_search_transform(mcp_instance, tool_search_config)
     else:
         # Use default initialization with auth from Flask config
-        logger.info("Creating MCP app with default configuration...")
+        logging.info("Creating MCP app with default configuration...")
         from superset.mcp_service.caching import create_response_caching_middleware
         from superset.mcp_service.flask_singleton import get_flask_app
 
@@ -1026,11 +1023,11 @@ def run_server(
     if not os.environ.get(env_key):
         os.environ[env_key] = "1"
         try:
-            logger.info("Starting FastMCP on %s:%s", host, port)
+            logging.info("Starting FastMCP on %s:%s", host, port)
 
             if event_store is not None:
                 # Multi-pod: Use http_app with Redis EventStore, run with uvicorn
-                logger.info("Running in multi-pod mode with Redis EventStore")
+                logging.info("Running in multi-pod mode with Redis EventStore")
                 app = mcp_instance.http_app(
                     transport="streamable-http",
                     event_store=event_store,
@@ -1040,7 +1037,7 @@ def run_server(
                 uvicorn.run(app, host=host, port=port)
             else:
                 # Single-pod mode: Use built-in run() with in-memory sessions
-                logger.info("Running in single-pod mode with in-memory sessions")
+                logging.info("Running in single-pod mode with in-memory sessions")
                 mcp_instance.run(
                     transport="streamable-http",
                     host=host,
@@ -1049,10 +1046,10 @@ def run_server(
                     middleware=starlette_middleware,
                 )
         except Exception as e:
-            logger.error("FastMCP failed: %s", e)
+            logging.error("FastMCP failed: %s", e)
             os.environ.pop(env_key, None)
     else:
-        logger.info("FastMCP already running on %s:%s", host, port)
+        logging.info("FastMCP already running on %s:%s", host, port)
 
 
 if __name__ == "__main__":
