@@ -243,7 +243,7 @@ prophet = ["prophet>=1.3.0, <2"]
 # (>=1.0.0) with no dual-compat release; the existing <0.9 ceiling already
 # keeps this on the 1.4-only line. Bump to >=1.0.0 in lockstep with
 # Superset's own SQLAlchemy 2.0 core bump (discussion #40273), not before.
-redshift = ["sqlalchemy-redshift>=0.8.1, <0.9"]
+redshift = ["sqlalchemy-redshift>=1.0.0, <1.1"]
 # No release of sqlalchemy-risingwave has ever supported both SQLAlchemy 1.4
 # and 2.0 (version numbers don't track SQLAlchemy compat monotonically); pin
 # to the newest 1.4-only release for now. Bump to >=2.0.0 in lockstep with
