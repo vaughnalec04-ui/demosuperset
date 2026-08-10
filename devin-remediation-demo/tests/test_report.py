@@ -176,65 +176,68 @@ def test_enrichment_marks_merged_pull_requests(tmp_path: Path) -> None:
     assert requests_[0].pull_request_state == "merged"
 
 
-def test_search_attributes_a_pull_request_when_polling_was_off(tmp_path: Path) -> None:
+def cross_reference(number: int, created_at: str) -> dict[str, object]:
+    """Build one `cross-referenced` timeline event linking a pull request."""
+    return {
+        "event": "cross-referenced",
+        "created_at": created_at,
+        "source": {
+            "issue": {
+                "number": number,
+                "html_url": (
+                    f"https://github.com/vaughnnaha/demosuperset/pull/{number}"
+                ),
+                "pull_request": {"url": "…"},
+            }
+        },
+    }
+
+
+def test_timeline_attributes_a_pull_request_when_polling_was_off(
+    tmp_path: Path,
+) -> None:
     requests_ = report.fold_requests(
         report.load_records([write_ledger(tmp_path, [GRANTED, STARTED])])
     )
     assert requests_[0].pull_request is None
 
-    search = mock.Mock(
+    timeline = mock.Mock(
         status_code=200,
-        json=lambda: {
-            "items": [
-                {
-                    "number": 1,
-                    "html_url": "https://github.com/vaughnnaha/demosuperset/pull/1",
-                    "created_at": "2026-08-06T00:00:00Z",
-                },
-                {
-                    "number": 7,
-                    "html_url": "https://github.com/vaughnnaha/demosuperset/pull/7",
-                    "created_at": "2026-08-07T20:20:00Z",
-                },
-            ]
-        },
+        json=lambda: [
+            {"event": "labeled", "created_at": "2026-08-07T20:19:00Z"},
+            cross_reference(1, "2026-08-06T00:00:00Z"),
+            cross_reference(7, "2026-08-07T20:20:00Z"),
+        ],
     )
     detail = mock.Mock(
         status_code=200, json=lambda: {"head": {"ref": "devin/1234-module-loggers"}}
     )
-    with mock.patch.object(report.requests, "get", side_effect=[search, detail]) as get:
+    with mock.patch.object(
+        report.requests, "get", side_effect=[timeline, detail]
+    ) as get:
         report.find_linked_pull_requests(requests_, "token")
 
-    assert get.call_args_list[0].kwargs["params"]["q"] == (
-        'repo:vaughnnaha/demosuperset type:pr in:body "#3"'
+    assert get.call_args_list[0].args[0].endswith(
+        "/repos/vaughnnaha/demosuperset/issues/3/timeline"
     )
     assert (
         requests_[0].pull_request == "https://github.com/vaughnnaha/demosuperset/pull/7"
     )
-    assert requests_[0].pull_request_source == "search"
+    assert requests_[0].pull_request_source == "cross-reference"
     assert "inferred" in report._outcome(requests_[0])
 
 
-def test_search_ignores_pull_requests_from_non_agent_branches(tmp_path: Path) -> None:
+def test_timeline_ignores_pull_requests_from_non_agent_branches(tmp_path: Path) -> None:
     requests_ = report.fold_requests(
         report.load_records([write_ledger(tmp_path, [GRANTED, STARTED])])
     )
-    search = mock.Mock(
-        status_code=200,
-        json=lambda: {
-            "items": [
-                {
-                    "number": 12,
-                    "html_url": "https://github.com/vaughnnaha/demosuperset/pull/12",
-                    "created_at": "2026-08-07T20:20:00Z",
-                }
-            ]
-        },
+    timeline = mock.Mock(
+        status_code=200, json=lambda: [cross_reference(12, "2026-08-07T20:20:00Z")]
     )
     detail = mock.Mock(
         status_code=200, json=lambda: {"head": {"ref": "dependabot/npm_and_yarn/antd"}}
     )
-    with mock.patch.object(report.requests, "get", side_effect=[search, detail]):
+    with mock.patch.object(report.requests, "get", side_effect=[timeline, detail]):
         report.find_linked_pull_requests(requests_, "token")
 
     assert requests_[0].pull_request is None
@@ -251,7 +254,7 @@ def test_a_directory_of_ledgers_is_read_recursively(tmp_path: Path) -> None:
     assert len(report.fold_requests(records)) == 2
 
 
-def test_search_skips_denied_requests(tmp_path: Path) -> None:
+def test_timeline_skips_denied_requests(tmp_path: Path) -> None:
     requests_ = report.fold_requests(
         report.load_records([write_ledger(tmp_path, [DENIED])])
     )

@@ -175,45 +175,46 @@ def find_linked_pull_requests(requests_: Sequence[Request], token: str | None) -
     """Attribute a pull request to a session the ledger has no PR link for.
 
     The ledger only records `pull_request` when polling is enabled, so fall back
-    to the earliest pull request that references the issue, was opened after the
-    session started, and comes from an agent branch. Without those bounds an
-    unrelated pull request mentioning the issue number would be misattributed.
+    to the issue's cross-reference timeline: the earliest pull request linked to
+    the issue that was opened after the session started and comes from an agent
+    branch. The timeline links only pull requests that genuinely reference the
+    issue, unlike a text search, which also matches bodies quoting the number.
     """
     if not token:
         return
     for request in requests_:
         if request.pull_request or not request.session_id or not request.repository:
             continue
-        query = f'repo:{request.repository} type:pr in:body "#{request.issue_number}"'
         try:
             response = requests.get(
-                f"{GITHUB_API_BASE}/search/issues",
+                f"{GITHUB_API_BASE}/repos/{request.repository}"
+                f"/issues/{request.issue_number}/timeline",
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Accept": "application/vnd.github+json",
                 },
-                params={
-                    "q": query,
-                    "per_page": "20",
-                    "sort": "created",
-                    "order": "asc",
-                },
+                params={"per_page": "100"},
                 timeout=REQUEST_TIMEOUT,
             )
             if response.status_code >= 400:
                 continue
-            items = response.json().get("items") or []
+            events = response.json() or []
         except (requests.RequestException, ValueError):
             continue
         started = parse_timestamp(request.session_started_at)
-        for item in items:
-            created = parse_timestamp(item.get("created_at"))
+        for event in events:
+            if event.get("event") != "cross-referenced":
+                continue
+            linked = (event.get("source") or {}).get("issue") or {}
+            if not linked.get("pull_request"):
+                continue
+            created = parse_timestamp(event.get("created_at"))
             if started and (created is None or created < started):
                 continue
-            if not from_agent_branch(request.repository, item.get("number"), token):
+            if not from_agent_branch(request.repository, linked.get("number"), token):
                 continue
-            request.pull_request = item.get("html_url")
-            request.pull_request_source = "search"
+            request.pull_request = linked.get("html_url")
+            request.pull_request_source = "cross-reference"
             break
 
 
@@ -417,7 +418,9 @@ def _outcome(request: Request) -> str:
         return f"refused: {request.reason or 'unspecified'}"
     if request.pull_request:
         state = request.pull_request_state or "open"
-        inferred = ", inferred" if request.pull_request_source == "search" else ""
+        inferred = (
+            ", inferred" if request.pull_request_source == "cross-reference" else ""
+        )
         return f"[PR]({request.pull_request}) ({state}{inferred})"
     if request.session_status:
         return str(request.session_status)
