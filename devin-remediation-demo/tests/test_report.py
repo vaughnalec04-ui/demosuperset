@@ -182,25 +182,30 @@ def test_search_attributes_a_pull_request_when_polling_was_off(tmp_path: Path) -
     )
     assert requests_[0].pull_request is None
 
-    with mock.patch.object(report.requests, "get") as get:
-        get.return_value = mock.Mock(
-            status_code=200,
-            json=lambda: {
-                "items": [
-                    {
-                        "html_url": "https://github.com/vaughnnaha/demosuperset/pull/1",
-                        "created_at": "2026-08-06T00:00:00Z",
-                    },
-                    {
-                        "html_url": "https://github.com/vaughnnaha/demosuperset/pull/7",
-                        "created_at": "2026-08-07T20:20:00Z",
-                    },
-                ]
-            },
-        )
+    search = mock.Mock(
+        status_code=200,
+        json=lambda: {
+            "items": [
+                {
+                    "number": 1,
+                    "html_url": "https://github.com/vaughnnaha/demosuperset/pull/1",
+                    "created_at": "2026-08-06T00:00:00Z",
+                },
+                {
+                    "number": 7,
+                    "html_url": "https://github.com/vaughnnaha/demosuperset/pull/7",
+                    "created_at": "2026-08-07T20:20:00Z",
+                },
+            ]
+        },
+    )
+    detail = mock.Mock(
+        status_code=200, json=lambda: {"head": {"ref": "devin/1234-module-loggers"}}
+    )
+    with mock.patch.object(report.requests, "get", side_effect=[search, detail]) as get:
         report.find_linked_pull_requests(requests_, "token")
 
-    assert get.call_args.kwargs["params"]["q"] == (
+    assert get.call_args_list[0].kwargs["params"]["q"] == (
         'repo:vaughnnaha/demosuperset type:pr in:body "#3"'
     )
     assert (
@@ -208,6 +213,31 @@ def test_search_attributes_a_pull_request_when_polling_was_off(tmp_path: Path) -
     )
     assert requests_[0].pull_request_source == "search"
     assert "inferred" in report._outcome(requests_[0])
+
+
+def test_search_ignores_pull_requests_from_non_agent_branches(tmp_path: Path) -> None:
+    requests_ = report.fold_requests(
+        report.load_records([write_ledger(tmp_path, [GRANTED, STARTED])])
+    )
+    search = mock.Mock(
+        status_code=200,
+        json=lambda: {
+            "items": [
+                {
+                    "number": 12,
+                    "html_url": "https://github.com/vaughnnaha/demosuperset/pull/12",
+                    "created_at": "2026-08-07T20:20:00Z",
+                }
+            ]
+        },
+    )
+    detail = mock.Mock(
+        status_code=200, json=lambda: {"head": {"ref": "dependabot/npm_and_yarn/antd"}}
+    )
+    with mock.patch.object(report.requests, "get", side_effect=[search, detail]):
+        report.find_linked_pull_requests(requests_, "token")
+
+    assert requests_[0].pull_request is None
 
 
 def test_a_directory_of_ledgers_is_read_recursively(tmp_path: Path) -> None:

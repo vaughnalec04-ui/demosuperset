@@ -43,6 +43,11 @@ import requests
 GITHUB_API_BASE = os.environ.get("GITHUB_API_URL", "https://api.github.com")
 REQUEST_TIMEOUT = 30
 
+# Branch prefix every agent-authored pull request uses. Inference is restricted
+# to these so an unrelated pull request that merely mentions the issue number
+# cannot be credited to a session.
+AGENT_BRANCH_PREFIX = os.environ.get("AGENT_BRANCH_PREFIX", "devin/")
+
 # Session statuses that mean Devin stopped working, whatever the outcome.
 TERMINAL_STATUSES = {"finished", "expired", "blocked"}
 
@@ -170,9 +175,9 @@ def find_linked_pull_requests(requests_: Sequence[Request], token: str | None) -
     """Attribute a pull request to a session the ledger has no PR link for.
 
     The ledger only records `pull_request` when polling is enabled, so fall back
-    to the earliest pull request that references the issue and was opened after
-    the session started. Without that lower bound a later pull request merely
-    mentioning the issue would be misattributed to the session.
+    to the earliest pull request that references the issue, was opened after the
+    session started, and comes from an agent branch. Without those bounds an
+    unrelated pull request mentioning the issue number would be misattributed.
     """
     if not token:
         return
@@ -205,9 +210,32 @@ def find_linked_pull_requests(requests_: Sequence[Request], token: str | None) -
             created = parse_timestamp(item.get("created_at"))
             if started and (created is None or created < started):
                 continue
+            if not from_agent_branch(request.repository, item.get("number"), token):
+                continue
             request.pull_request = item.get("html_url")
             request.pull_request_source = "search"
             break
+
+
+def from_agent_branch(repository: str, number: Any, token: str) -> bool:
+    """Report whether a pull request was opened from an agent-authored branch."""
+    if not isinstance(number, int):
+        return False
+    try:
+        response = requests.get(
+            f"{GITHUB_API_BASE}/repos/{repository}/pulls/{number}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json",
+            },
+            timeout=REQUEST_TIMEOUT,
+        )
+        if response.status_code >= 400:
+            return False
+        head = (response.json().get("head") or {}).get("ref") or ""
+    except (requests.RequestException, ValueError):
+        return False
+    return str(head).startswith(AGENT_BRANCH_PREFIX)
 
 
 def enrich_pull_requests(requests_: Sequence[Request], token: str | None) -> None:
