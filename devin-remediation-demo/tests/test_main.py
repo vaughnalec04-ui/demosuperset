@@ -40,17 +40,17 @@ def make_event(
     return {
         "action": action,
         "label": {"name": label},
-        "sender": {"login": "vaughnnaha", "id": 4242, "type": sender_type},
+        "sender": {"login": "vaughnalec04-ui", "id": 4242, "type": sender_type},
         "issue": {
             "number": 3,
             "title": "test(native-filters): cover defaultToFirstItem clear",
             "body": "## Problem\nMissing regression coverage.",
-            "html_url": "https://github.com/vaughnnaha/demosuperset/issues/3",
+            "html_url": "https://github.com/vaughnalec04-ui/demosuperset/issues/3",
             "labels": [{"name": name} for name in issue_labels],
         },
         "repository": {
-            "full_name": "vaughnnaha/demosuperset",
-            "html_url": "https://github.com/vaughnnaha/demosuperset",
+            "full_name": "vaughnalec04-ui/demosuperset",
+            "html_url": "https://github.com/vaughnalec04-ui/demosuperset",
             "default_branch": "master",
         },
     }
@@ -116,12 +116,12 @@ def test_valid_event_produces_expected_devin_request(
     assert devin_call.args[0] == "https://api.devin.ai/v1/sessions"
     assert devin_call.kwargs["headers"]["Authorization"] == "Bearer test-key"
     prompt = devin_call.kwargs["json"]["prompt"]
-    assert "https://github.com/vaughnnaha/demosuperset/issues/3" in prompt
+    assert "https://github.com/vaughnalec04-ui/demosuperset/issues/3" in prompt
     assert "Do not merge the pull request." in prompt
     assert "Missing regression coverage." in prompt
 
     assert comment_call.args[0] == (
-        "https://api.github.com/repos/vaughnnaha/demosuperset/issues/3/comments"
+        "https://api.github.com/repos/vaughnalec04-ui/demosuperset/issues/3/comments"
     )
     assert "https://app.devin.ai/sessions/abc123" in comment_call.kwargs["json"]["body"]
 
@@ -168,7 +168,7 @@ def test_authorized_run_writes_audit_trail(
 
     events = {event["event"]: event for event in audit_events(tmp_path)}
     granted = events["authorization.granted"]
-    assert granted["actor"] == "vaughnnaha"
+    assert granted["actor"] == "vaughnalec04-ui"
     assert granted["actor_id"] == 4242
     assert granted["actor_permission"] == "write"
     assert granted["decision"] == "allow"
