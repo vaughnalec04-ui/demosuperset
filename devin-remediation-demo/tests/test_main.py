@@ -26,7 +26,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-import main  # noqa: E402
+import main
 
 
 def make_event(
@@ -85,9 +85,11 @@ def run_main(
         )
     )
     get = mock.Mock(return_value=permission_response(permission))
-    with mock.patch.object(main.requests, "post", post):
-        with mock.patch.object(main.requests, "get", get):
-            return main.main(), post
+    with (
+        mock.patch.object(main.requests, "post", post),
+        mock.patch.object(main.requests, "get", get),
+    ):
+        return main.main(), post
 
 
 def audit_events(tmp_path: Path) -> list[dict[str, Any]]:
@@ -252,15 +254,17 @@ def test_devin_api_failure_exits_nonzero(
     monkeypatch.setenv("DEVIN_API_KEY", "test-key")
     monkeypatch.setenv("GITHUB_TOKEN", "gh-token")
 
-    with mock.patch.object(
-        main.requests, "get", mock.Mock(return_value=permission_response("admin"))
-    ):
-        with mock.patch.object(
+    with (
+        mock.patch.object(
+            main.requests, "get", mock.Mock(return_value=permission_response("admin"))
+        ),
+        mock.patch.object(
             main.requests,
             "post",
             mock.Mock(return_value=mock.Mock(status_code=401, text="unauthorized")),
-        ):
-            assert main.main() == 1
+        ),
+    ):
+        assert main.main() == 1
 
 
 if __name__ == "__main__":

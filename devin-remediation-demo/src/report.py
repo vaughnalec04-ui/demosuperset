@@ -34,9 +34,10 @@ import json
 import os
 import sys
 from collections import Counter
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 import requests
 
@@ -175,46 +176,60 @@ def find_linked_pull_requests(requests_: Sequence[Request], token: str | None) -
     """Attribute a pull request to a session the ledger has no PR link for.
 
     The ledger only records `pull_request` when polling is enabled, so fall back
-    to the earliest pull request that references the issue, was opened after the
-    session started, and comes from an agent branch. Without those bounds an
-    unrelated pull request mentioning the issue number would be misattributed.
+    to the issue's cross-reference timeline: the earliest pull request linked to
+    the issue that was opened after the session started and comes from an agent
+    branch. The timeline links only pull requests that genuinely reference the
+    issue, unlike a text search, which also matches bodies quoting the number.
     """
     if not token:
         return
     for request in requests_:
         if request.pull_request or not request.session_id or not request.repository:
             continue
-        query = f'repo:{request.repository} type:pr in:body "#{request.issue_number}"'
         try:
             response = requests.get(
-                f"{GITHUB_API_BASE}/search/issues",
+                f"{GITHUB_API_BASE}/repos/{request.repository}"
+                f"/issues/{request.issue_number}/timeline",
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Accept": "application/vnd.github+json",
                 },
-                params={
-                    "q": query,
-                    "per_page": "20",
-                    "sort": "created",
-                    "order": "asc",
-                },
+                params={"per_page": "100"},
                 timeout=REQUEST_TIMEOUT,
             )
             if response.status_code >= 400:
                 continue
-            items = response.json().get("items") or []
+            events = response.json() or []
         except (requests.RequestException, ValueError):
             continue
-        started = parse_timestamp(request.session_started_at)
-        for item in items:
-            created = parse_timestamp(item.get("created_at"))
-            if started and (created is None or created < started):
-                continue
-            if not from_agent_branch(request.repository, item.get("number"), token):
-                continue
-            request.pull_request = item.get("html_url")
-            request.pull_request_source = "search"
-            break
+        linked = first_agent_pull_request(
+            events, request.repository, request.session_started_at, token
+        )
+        if linked:
+            request.pull_request = linked
+            request.pull_request_source = "cross-reference"
+
+
+def first_agent_pull_request(
+    events: Iterable[dict[str, Any]],
+    repository: str,
+    session_started_at: str | None,
+    token: str,
+) -> str | None:
+    """Return the first agent-authored pull request cross-referenced on an issue."""
+    started = parse_timestamp(session_started_at)
+    for event in events:
+        if event.get("event") != "cross-referenced":
+            continue
+        linked = (event.get("source") or {}).get("issue") or {}
+        created = parse_timestamp(event.get("created_at"))
+        if not linked.get("pull_request"):
+            continue
+        if started and (created is None or created < started):
+            continue
+        if from_agent_branch(repository, linked.get("number"), token):
+            return str(linked.get("html_url"))
+    return None
 
 
 def from_agent_branch(repository: str, number: Any, token: str) -> bool:
@@ -329,9 +344,11 @@ def render_markdown(requests_: Sequence[Request], metrics: dict[str, Any]) -> st
     lines = [
         "# Devin remediation effectiveness report",
         "",
-        f"Window: `{metrics['window_start'] or 'n/a'}` .. "
-        f"`{metrics['window_end'] or 'n/a'}` "
-        f"({metrics['requests']} authorization decisions)",
+        (
+            f"Window: `{metrics['window_start'] or 'n/a'}` .. "
+            f"`{metrics['window_end'] or 'n/a'}` "
+            f"({metrics['requests']} authorization decisions)"
+        ),
         "",
         "## Access control",
         "",
@@ -361,8 +378,10 @@ def render_markdown(requests_: Sequence[Request], metrics: dict[str, Any]) -> st
         f"| Pull requests merged | {metrics['pull_requests_merged']} |",
         f"| Pull-request yield | {_percent(metrics['pull_request_yield'])} |",
         f"| Merge rate | {_percent(metrics['merge_rate'])} |",
-        f"| Mean observed session duration | "
-        f"{_duration(metrics['mean_session_seconds'])} |",
+        (
+            f"| Mean observed session duration | "
+            f"{_duration(metrics['mean_session_seconds'])} |"
+        ),
         "",
         "## Requests",
         "",
@@ -378,8 +397,10 @@ def render_markdown(requests_: Sequence[Request], metrics: dict[str, Any]) -> st
         )
     lines += [
         "",
-        "Generated from the append-only audit ledger; every row is traceable to "
-        "an Actions run and the actor who authorized it.",
+        (
+            "Generated from the append-only audit ledger; every row is traceable "
+            "to an Actions run and the actor who authorized it."
+        ),
         "",
     ]
     return "\n".join(lines)
@@ -417,7 +438,9 @@ def _outcome(request: Request) -> str:
         return f"refused: {request.reason or 'unspecified'}"
     if request.pull_request:
         state = request.pull_request_state or "open"
-        inferred = ", inferred" if request.pull_request_source == "search" else ""
+        inferred = (
+            ", inferred" if request.pull_request_source == "cross-reference" else ""
+        )
         return f"[PR]({request.pull_request}) ({state}{inferred})"
     if request.session_status:
         return str(request.session_status)
