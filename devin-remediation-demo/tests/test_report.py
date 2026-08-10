@@ -32,7 +32,7 @@ DENIED = {
     "event": "authorization.denied",
     "decision": "deny",
     "reason": "bot actor `devin-ai-integration[bot]` is not allowlisted",
-    "repository": "vaughnnaha/demosuperset",
+    "repository": "vaughnalec04-ui/demosuperset",
     "issue_number": 3,
     "actor": "devin-ai-integration[bot]",
     "actor_id": 158243242,
@@ -43,9 +43,9 @@ GRANTED = {
     "timestamp": "2026-08-07T20:04:12+00:00",
     "event": "authorization.granted",
     "decision": "allow",
-    "repository": "vaughnnaha/demosuperset",
+    "repository": "vaughnalec04-ui/demosuperset",
     "issue_number": 3,
-    "actor": "vaughnnaha",
+    "actor": "vaughnalec04-ui",
     "actor_id": 313640057,
     "actor_type": "User",
     "actor_permission": "admin",
@@ -55,9 +55,9 @@ STARTED = {
     "timestamp": "2026-08-07T20:04:14+00:00",
     "event": "session.started",
     "decision": "allow",
-    "repository": "vaughnnaha/demosuperset",
+    "repository": "vaughnalec04-ui/demosuperset",
     "issue_number": 3,
-    "actor": "vaughnnaha",
+    "actor": "vaughnalec04-ui",
     "actor_permission": "admin",
     "run_id": "31214186321",
     "session_id": "devin-f73bd27a79f94b919b1172bb215d3127",
@@ -68,9 +68,9 @@ ENDED = {
     "timestamp": "2026-08-07T20:24:00+00:00",
     "event": "session.ended",
     "decision": "allow",
-    "repository": "vaughnnaha/demosuperset",
+    "repository": "vaughnalec04-ui/demosuperset",
     "issue_number": 3,
-    "actor": "vaughnnaha",
+    "actor": "vaughnalec04-ui",
     "actor_permission": "admin",
     "run_id": "31214186321",
     "session_id": "devin-f73bd27a79f94b919b1172bb215d3127",
@@ -78,7 +78,7 @@ ENDED = {
     "session_ended_at": "2026-08-07T20:24:00+00:00",
     "session_duration_seconds": 1188,
     "session_status": "finished",
-    "pull_request": "https://github.com/vaughnnaha/demosuperset/pull/7",
+    "pull_request": "https://github.com/vaughnalec04-ui/demosuperset/pull/7",
 }
 
 
@@ -114,7 +114,9 @@ def test_later_records_supersede_earlier_ones(tmp_path: Path) -> None:
     (request,) = report.fold_requests(records)
     assert request.session_status == "finished"
     assert request.session_duration_seconds == 1188
-    assert request.pull_request == "https://github.com/vaughnnaha/demosuperset/pull/7"
+    assert (
+        request.pull_request == "https://github.com/vaughnalec04-ui/demosuperset/pull/7"
+    )
     assert request.events == ["session.started", "session.ended"]
 
 
@@ -140,7 +142,7 @@ def test_summarize_counts_decisions_and_outcomes(tmp_path: Path) -> None:
     assert metrics["mean_session_seconds"] == 1188
     assert metrics["issues_touched"] == [3]
     assert DENIED["reason"] in metrics["denial_reasons"]
-    assert metrics["actors"]["vaughnnaha"] == 1
+    assert metrics["actors"]["vaughnalec04-ui"] == 1
     assert metrics["window_start"] == "2026-08-07T19:49:08+00:00"
     assert metrics["window_end"] == "2026-08-07T20:24:00+00:00"
 
@@ -155,7 +157,7 @@ def test_markdown_reports_both_paths(tmp_path: Path) -> None:
     assert "Denial rate | 50%" in markdown
     assert "not allowlisted" in markdown
     assert "devin-ai-integration[bot] (bot)" in markdown
-    assert "https://github.com/vaughnnaha/demosuperset/pull/7" in markdown
+    assert "https://github.com/vaughnalec04-ui/demosuperset/pull/7" in markdown
     assert "19m 48s" in markdown
 
 
@@ -170,7 +172,7 @@ def test_enrichment_marks_merged_pull_requests(tmp_path: Path) -> None:
         report.enrich_pull_requests(requests_, "token")
 
     assert get.call_args.args[0] == (
-        "https://api.github.com/repos/vaughnnaha/demosuperset/pulls/7"
+        "https://api.github.com/repos/vaughnalec04-ui/demosuperset/pulls/7"
     )
     assert requests_[0].pull_request_state == "merged"
 
@@ -184,7 +186,7 @@ def cross_reference(number: int, created_at: str) -> dict[str, object]:
             "issue": {
                 "number": number,
                 "html_url": (
-                    f"https://github.com/vaughnnaha/demosuperset/pull/{number}"
+                    f"https://github.com/vaughnalec04-ui/demosuperset/pull/{number}"
                 ),
                 "pull_request": {"url": "…"},
             }
@@ -219,10 +221,11 @@ def test_timeline_attributes_a_pull_request_when_polling_was_off(
     assert (
         get.call_args_list[0]
         .args[0]
-        .endswith("/repos/vaughnnaha/demosuperset/issues/3/timeline")
+        .endswith("/repos/vaughnalec04-ui/demosuperset/issues/3/timeline")
     )
     assert (
-        requests_[0].pull_request == "https://github.com/vaughnnaha/demosuperset/pull/7"
+        requests_[0].pull_request
+        == "https://github.com/vaughnalec04-ui/demosuperset/pull/7"
     )
     assert requests_[0].pull_request_source == "cross-reference"
     assert "inferred" in report._outcome(requests_[0])

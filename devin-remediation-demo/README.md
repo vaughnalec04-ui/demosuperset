@@ -182,15 +182,15 @@ One JSON object per line. Example (`session.started`):
 {
   "timestamp": "2026-08-07T01:12:44+00:00",
   "event": "session.started",
-  "actor": "vaughnnaha",
+  "actor": "vaughnalec04-ui",
   "actor_id": 4242,
   "actor_type": "User",
   "actor_permission": "admin",
-  "repository": "vaughnnaha/demosuperset",
+  "repository": "vaughnalec04-ui/demosuperset",
   "issue_number": 4,
   "trigger_label": "devin-approved",
   "run_id": "31131815922",
-  "run_url": "https://github.com/vaughnnaha/demosuperset/actions/runs/31131815922",
+  "run_url": "https://github.com/vaughnalec04-ui/demosuperset/actions/runs/31131815922",
   "session_id": "devin-34c7a00acbb64d6bada84bcbdbe73ef9",
   "session_started_at": "2026-08-07T01:12:44+00:00"
 }
