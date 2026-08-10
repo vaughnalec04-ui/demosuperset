@@ -201,21 +201,34 @@ def find_linked_pull_requests(requests_: Sequence[Request], token: str | None) -
             events = response.json() or []
         except (requests.RequestException, ValueError):
             continue
-        started = parse_timestamp(request.session_started_at)
-        for event in events:
-            if event.get("event") != "cross-referenced":
-                continue
-            linked = (event.get("source") or {}).get("issue") or {}
-            if not linked.get("pull_request"):
-                continue
-            created = parse_timestamp(event.get("created_at"))
-            if started and (created is None or created < started):
-                continue
-            if not from_agent_branch(request.repository, linked.get("number"), token):
-                continue
-            request.pull_request = linked.get("html_url")
+        linked = first_agent_pull_request(
+            events, request.repository, request.session_started_at, token
+        )
+        if linked:
+            request.pull_request = linked
             request.pull_request_source = "cross-reference"
-            break
+
+
+def first_agent_pull_request(
+    events: Iterable[dict[str, Any]],
+    repository: str,
+    session_started_at: str | None,
+    token: str,
+) -> str | None:
+    """Return the first agent-authored pull request cross-referenced on an issue."""
+    started = parse_timestamp(session_started_at)
+    for event in events:
+        if event.get("event") != "cross-referenced":
+            continue
+        linked = (event.get("source") or {}).get("issue") or {}
+        created = parse_timestamp(event.get("created_at"))
+        if not linked.get("pull_request"):
+            continue
+        if started and (created is None or created < started):
+            continue
+        if from_agent_branch(repository, linked.get("number"), token):
+            return str(linked.get("html_url"))
+    return None
 
 
 def from_agent_branch(repository: str, number: Any, token: str) -> bool:

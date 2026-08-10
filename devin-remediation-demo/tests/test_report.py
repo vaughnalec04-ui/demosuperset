@@ -217,8 +217,10 @@ def test_timeline_attributes_a_pull_request_when_polling_was_off(
     ) as get:
         report.find_linked_pull_requests(requests_, "token")
 
-    assert get.call_args_list[0].args[0].endswith(
-        "/repos/vaughnnaha/demosuperset/issues/3/timeline"
+    assert (
+        get.call_args_list[0]
+        .args[0]
+        .endswith("/repos/vaughnnaha/demosuperset/issues/3/timeline")
     )
     assert (
         requests_[0].pull_request == "https://github.com/vaughnnaha/demosuperset/pull/7"
