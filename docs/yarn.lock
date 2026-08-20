@@ -4095,23 +4095,23 @@
   resolved "https://registry.yarnpkg.com/@standard-schema/utils/-/utils-0.3.0.tgz#3d5e608f16c2390c10528e98e59aef6bf73cae7b"
   integrity sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==
 
-"@storybook/addon-docs@^10.5.5":
-  version "10.5.5"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-docs/-/addon-docs-10.5.5.tgz#c679e9e68b19559bc5dee74c5a4670e95677c26f"
-  integrity sha512-0YpKlimS4XE0kQ8Maa5coeefQxdyDrBHg1wOP3WTPuBe4FolFSCDveR0ge2+vuUBk+fZfn2+l+3Q2jmAWaRGDg==
+"@storybook/addon-docs@^10.5.8":
+  version "10.5.8"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-docs/-/addon-docs-10.5.8.tgz#767c10c7a4cc1b625b93f869b2a2b09fc8514f2e"
+  integrity sha512-NlHiMKW/UvW/uL8HXFDCEVwoH3qZeGYZ/qlWax4d7H471b/T54MBq2KcB4ZrdA785FfIH3numAJdBb5jwn00Mg==
   dependencies:
     "@mdx-js/react" "^3.0.0"
-    "@storybook/csf-plugin" "10.5.5"
+    "@storybook/csf-plugin" "10.5.8"
     "@storybook/icons" "^2.0.2"
-    "@storybook/react-dom-shim" "10.5.5"
+    "@storybook/react-dom-shim" "10.5.8"
     react "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
     react-dom "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
     ts-dedent "^2.0.0"
 
-"@storybook/csf-plugin@10.5.5":
-  version "10.5.5"
-  resolved "https://registry.yarnpkg.com/@storybook/csf-plugin/-/csf-plugin-10.5.5.tgz#bae774f81987a0114f525d7e90a2b1e6ddf535ba"
-  integrity sha512-/euibhRFqklYCZqUseokojmfYcQpXshVY2QmA1qCuxMz9SzVFD3iSTw+aFLTxpsJGGdcZJk8fnm/rEthLzZ9jA==
+"@storybook/csf-plugin@10.5.8":
+  version "10.5.8"
+  resolved "https://registry.yarnpkg.com/@storybook/csf-plugin/-/csf-plugin-10.5.8.tgz#c626c5bfe55d0e279b2457e5cf150a788d1fc637"
+  integrity sha512-/FHiMyOWWEXfwK/lM0WxmkP9GLzbSJJuzGtfeuNWSOVDnvAMbjavitxfHb5wSbWKIQo0XYC1EJ2Y7x91XNYP4w==
   dependencies:
     unplugin "^2.3.5"
 
@@ -4125,10 +4125,10 @@
   resolved "https://registry.yarnpkg.com/@storybook/icons/-/icons-2.1.0.tgz#edfc2450a39c5e780f28c6cbc49acd7bff59b41a"
   integrity sha512-Fxh9vYpX9bQqFeHRiY8h2ApeRGDzRSMLwJwNZ/AIRqnyOKHxRKL+yFe+ctEkVJmuptRE9u1Hrn8ZZNHyfDKKNg==
 
-"@storybook/react-dom-shim@10.5.5":
-  version "10.5.5"
-  resolved "https://registry.yarnpkg.com/@storybook/react-dom-shim/-/react-dom-shim-10.5.5.tgz#d60aa45a1174b2b404305c0d932cb43854afadf7"
-  integrity sha512-PIk7N3LLrZIxfNxmkvmQN1d5UQ70XEedT8n0GhBiXnM6XL09xPGB8n8TZXeJBRYluKhDQcAyQeT0/OZmcDVQJg==
+"@storybook/react-dom-shim@10.5.8":
+  version "10.5.8"
+  resolved "https://registry.yarnpkg.com/@storybook/react-dom-shim/-/react-dom-shim-10.5.8.tgz#40cc3e32af424baa2e4109a325dae2ede29999e2"
+  integrity sha512-N8D13/Xny+V3kfe1KBgsAHS0nKWXLLdgOOXS9poKdYzVwVCN+CGEGBxWX0zMMtdCptqa6/57em9coPlZMoO+bg==
 
 "@superset-ui/core@^0.20.4":
   version "0.20.4"
@@ -4981,7 +4981,7 @@
     picocolors "1.1.1"
     pretty-format "^27.0.2"
 
-"@testing-library/jest-dom@^6.9.1":
+"@testing-library/jest-dom@6.9.1":
   version "6.9.1"
   resolved "https://registry.yarnpkg.com/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz#7613a04e146dd2976d24ddf019730d57a89d56c2"
   integrity sha512-zIcONa+hVtVSSep9UT3jZ5rizo2BsxgyDYU7WFD5eICBE7no3881HGeb/QkGfsJs6JTkY1aQhT7rIPC7e+0nnA==
@@ -14702,15 +14702,15 @@ stop-iteration-iterator@^1.1.0:
     es-errors "^1.3.0"
     internal-slot "^1.1.0"
 
-storybook@^10.5.5:
-  version "10.5.5"
-  resolved "https://registry.yarnpkg.com/storybook/-/storybook-10.5.5.tgz#6b720e7cf5cfba1a06f5f1c9ab476e6af27cd72a"
-  integrity sha512-UscBIBJDloUeqntukHOhP1a5W/vouePDJbzPSxj466WK801FZtzQiMffMtkjzJiWSuj20wfaYlB2QQKh9aOYAg==
+storybook@^10.5.8:
+  version "10.5.8"
+  resolved "https://registry.yarnpkg.com/storybook/-/storybook-10.5.8.tgz#d5f051983e6232c0a73ea02149a72c7bafb43275"
+  integrity sha512-rR4oFMSiWBSqI0lvsJPtcQUPj8+hzj3TkLu+Mw61Wo6YxPSb5FsLSHai0jZnuaIdKIlmu25KCfwlSQl4e1uvnA==
   dependencies:
     "@storybook/global" "^5.0.0"
     "@storybook/icons" "^2.0.2"
     "@testing-library/dom" "^10.4.1"
-    "@testing-library/jest-dom" "^6.9.1"
+    "@testing-library/jest-dom" "6.9.1"
     "@testing-library/user-event" "^14.6.1"
     "@vitest/expect" "3.2.4"
     "@vitest/spy" "3.2.4"
